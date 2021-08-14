@@ -572,8 +572,13 @@ void Span::checkConnect(){
     statusLED.on();
   }
 
-  if(wifiCallback)
+  if(wifiCallback) {
     wifiCallback();
+  }
+  
+  if(eventLoopHandle != NULL) {
+    esp_event_post_to(eventLoopHandle, HOMESPAN_EVENTS, HOMESPAN_WIFI_CONNECTED, NULL, 0, portMAX_DELAY);
+  }
   
 } // initWiFi
 
