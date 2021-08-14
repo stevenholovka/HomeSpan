@@ -37,6 +37,8 @@
 
 using namespace Utils;
 
+ESP_EVENT_DEFINE_BASE(HOMESPAN_EVENTS);
+
 HAPClient **hap;                    // HAP Client structure containing HTTP client connections, parsing routines, and state variables (global-scoped variable)
 Span homeSpan;                      // HAP Attributes database and all related control functions for this Accessory (global-scoped variable)
 HapCharacteristics hapChars;        // Instantiation of all HAP Characteristics (used to create SpanCharacteristics)
@@ -163,9 +165,16 @@ void Span::poll() {
       } else {
         Serial.print("YOU MAY CONFIGURE BY TYPING 'W <RETURN>'.\n\n");
         statusLED.start(LED_WIFI_NEEDED);
+        if(eventLoopHandle != NULL) {
+          esp_event_post_to(eventLoopHandle, HOMESPAN_EVENTS, HOMESPAN_WIFI_NEEDED, NULL, 0, portMAX_DELAY);
+        }
       }
     } else {
       homeSpan.statusLED.start(LED_WIFI_CONNECTING);
+
+      if(eventLoopHandle != NULL) {
+        esp_event_post_to(eventLoopHandle, HOMESPAN_EVENTS, HOMESPAN_WIFI_CONNECTING, NULL, 0, portMAX_DELAY);
+      }
     }
           
     controlButton.reset();        
@@ -173,6 +182,10 @@ void Span::poll() {
     Serial.print(displayName);
     Serial.print(" is READY!\n\n");
     isInitialized=true;
+
+    if(eventLoopHandle != NULL) {
+      esp_event_post_to(eventLoopHandle, HOMESPAN_EVENTS, HOMESPAN_READY, NULL, 0, portMAX_DELAY);
+    }
     
   } // isInitialized
 
@@ -324,11 +337,18 @@ void Span::commandMode(){
       Serial.print("*** NO ACTION\n\n");
       if(strlen(network.wifiData.ssid)==0)
         statusLED.start(LED_WIFI_NEEDED);
+        if(eventLoopHandle != NULL) {
+          esp_event_post_to(eventLoopHandle, HOMESPAN_EVENTS, HOMESPAN_WIFI_NEEDED, NULL, 0, portMAX_DELAY);
+        }
       else
-      if(!HAPClient::nAdminControllers())
+      if(!HAPClient::nAdminControllers()) {
         statusLED.start(LED_PAIRING_NEEDED);
-      else
+        if(eventLoopHandle != NULL) {
+          esp_event_post_to(eventLoopHandle, HOMESPAN_EVENTS, HOMESPAN_PAIRING_NEEDED, NULL, 0, portMAX_DELAY);
+        }
+      } else {
         statusLED.on();
+      }
     break;
 
     case 2:
@@ -365,6 +385,9 @@ void Span::checkConnect(){
     waitTime=60000;
     alarmConnect=0;
     homeSpan.statusLED.start(LED_WIFI_CONNECTING);
+    if(eventLoopHandle != NULL) {
+      esp_event_post_to(eventLoopHandle, HOMESPAN_EVENTS, HOMESPAN_WIFI_CONNECTING, NULL, 0, portMAX_DELAY);
+    }
   }
 
   if(WiFi.status()!=WL_CONNECTED){
@@ -500,6 +523,9 @@ void Span::checkConnect(){
             type = "filesystem";
           Serial.println("\n*** OTA Starting:" + type);
           homeSpan.statusLED.start(LED_OTA_STARTED);
+          if(homeSpan.eventLoopHandle != NULL) {
+            esp_event_post_to(homeSpan.eventLoopHandle, HOMESPAN_EVENTS, HOMESPAN_OTA_STARTED, NULL, 0, portMAX_DELAY);
+          }
         })
         .onEnd([]() {
           Serial.println("\n*** OTA Completed.  Rebooting...");
@@ -539,6 +565,9 @@ void Span::checkConnect(){
   if(!HAPClient::nAdminControllers()){
     Serial.print("DEVICE NOT YET PAIRED -- PLEASE PAIR WITH HOMEKIT APP\n\n");
     statusLED.start(LED_PAIRING_NEEDED);
+    if(eventLoopHandle != NULL) {
+      esp_event_post_to(eventLoopHandle, HOMESPAN_EVENTS, HOMESPAN_PAIRING_NEEDED, NULL, 0, portMAX_DELAY);
+    }
   } else {
     statusLED.on();
   }
@@ -737,10 +766,17 @@ void Span::processSerialCommand(const char *c){
       Serial.print("\nDEVICE NOT YET PAIRED -- PLEASE PAIR WITH HOMEKIT APP\n\n");
       mdns_service_txt_item_set("_hap","_tcp","sf","1");                                                        // set Status Flag = 1 (Table 6-8)
       
-      if(strlen(network.wifiData.ssid)==0)
+      if(strlen(network.wifiData.ssid)==0) {
         statusLED.start(LED_WIFI_NEEDED);
-      else
+        if(eventLoopHandle != NULL) {
+          esp_event_post_to(eventLoopHandle, HOMESPAN_EVENTS, HOMESPAN_WIFI_NEEDED, NULL, 0, portMAX_DELAY);
+        }
+      } else {
         statusLED.start(LED_PAIRING_NEEDED);
+        if(eventLoopHandle != NULL) {
+          esp_event_post_to(eventLoopHandle, HOMESPAN_EVENTS, HOMESPAN_PAIRING_NEEDED, NULL, 0, portMAX_DELAY);
+        }
+      }
     }
     break;
 
@@ -1320,6 +1356,22 @@ int Span::sprintfAttributes(char **ids, int numIDs, int flags, char *cBuf){
   nChars+=snprintf(cBuf?(cBuf+nChars):NULL,cBuf?64:0,"]}");
 
   return(nChars);    
+}
+
+void Span::addEventHandler(esp_event_handler_t handlerFunc) {
+  if(eventLoopHandle == NULL) {
+    esp_event_loop_args_t loopArgs = {
+          .queue_size = 5,
+          .task_name = "HomeSpanEventLoop",
+          .task_priority = uxTaskPriorityGet(NULL),
+          .task_stack_size = 2048,
+          .task_core_id = xPortGetCoreID()
+    };
+
+    esp_event_loop_create(&loopArgs, &eventLoopHandle);
+  }
+
+  esp_event_handler_register_with(eventLoopHandle, HOMESPAN_EVENTS, ESP_EVENT_ANY_ID, handlerFunc, NULL);
 }
 
 ///////////////////////////////

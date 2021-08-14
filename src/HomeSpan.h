@@ -42,6 +42,8 @@
 #include "HapQR.h"
 #include "Characteristics.h"
 
+#include <esp_event.h>
+
 using std::vector;
 using std::unordered_map;
 
@@ -54,6 +56,18 @@ enum {
   GET_DESC=32,
   GET_NV=64,
   GET_ALL=255
+};
+
+enum {
+    HOMESPAN_WIFI_NEEDED,
+    HOMESPAN_WIFI_CONNECTING,
+    HOMESPAN_WIFI_CONNECTED,
+    HOMESPAN_WIFI_DISCONNECTED,
+    HOMESPAN_AP_STARTED,
+    HOMESPAN_AP_CONNECTED,
+    HOMESPAN_OTA_STARTED,
+    HOMESPAN_PAIRING_NEEDED,
+    HOMESPAN_READY,
 };
 
 ///////////////////////////////
@@ -143,6 +157,8 @@ struct Span{
   
   unordered_map<char, SpanUserCommand *> UserCommands;           // map of pointers to all UserCommands
 
+  esp_event_loop_handle_t eventLoopHandle = NULL;
+
   void begin(Category catID=DEFAULT_CATEGORY,
              const char *displayName=DEFAULT_DISPLAY_NAME,
              const char *hostNameBase=DEFAULT_HOST_NAME,
@@ -186,6 +202,8 @@ struct Span{
   
   void enableAutoStartAP(){autoStartAPEnabled=true;}                      // enables auto start-up of Access Point when WiFi Credentials not found
   void setWifiCredentials(const char *ssid, const char *pwd);             // sets WiFi Credentials
+
+  void addEventHandler(esp_event_handler_t handlerFunc);                  // adds an event handler
 };
 
 ///////////////////////////////
