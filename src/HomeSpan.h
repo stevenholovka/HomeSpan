@@ -156,8 +156,7 @@ struct Span{
   unordered_map<uint64_t, uint32_t> TimedWrites;    // map of timed-write PIDs and Alarm Times (based on TTLs)
   
   unordered_map<char, SpanUserCommand *> UserCommands;           // map of pointers to all UserCommands
-
-  esp_event_loop_handle_t eventLoopHandle = NULL;
+  void (*eventCallback)(int e)=NULL;                // optional function to invoke when events occur
 
   void begin(Category catID=DEFAULT_CATEGORY,
              const char *displayName=DEFAULT_DISPLAY_NAME,
@@ -203,7 +202,7 @@ struct Span{
   void enableAutoStartAP(){autoStartAPEnabled=true;}                      // enables auto start-up of Access Point when WiFi Credentials not found
   void setWifiCredentials(const char *ssid, const char *pwd);             // sets WiFi Credentials
 
-  void addEventHandler(esp_event_handler_t handlerFunc);                  // adds an event handler
+  void addEventCallback(void (*f)(int e));                                // adds an event callback
 };
 
 ///////////////////////////////
