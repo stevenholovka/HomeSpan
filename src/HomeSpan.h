@@ -70,6 +70,7 @@ enum {
     HOMESPAN_READY,
 };
 
+
 ///////////////////////////////
 
 // Forward-Declarations
@@ -156,6 +157,8 @@ struct Span{
   unordered_map<uint64_t, uint32_t> TimedWrites;    // map of timed-write PIDs and Alarm Times (based on TTLs)
   
   unordered_map<char, SpanUserCommand *> UserCommands;           // map of pointers to all UserCommands
+
+  esp_event_loop_handle_t eventLoopHandle = NULL;
   void (*eventCallback)(int e)=NULL;                // optional function to invoke when events occur
 
   void begin(Category catID=DEFAULT_CATEGORY,
