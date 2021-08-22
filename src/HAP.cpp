@@ -656,6 +656,7 @@ int HAPClient::postPairSetupURL(){
       
       LOG1("\n*** ACCESSORY PAIRED! ***\n");
       homeSpan.statusLED.on();
+      homeSpan.fireEventCallback(HOMESPAN_PAIRED);
       
       return(1);        
              

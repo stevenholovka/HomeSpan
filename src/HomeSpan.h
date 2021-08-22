@@ -67,6 +67,7 @@ enum {
     HOMESPAN_AP_CONNECTED,
     HOMESPAN_OTA_STARTED,
     HOMESPAN_PAIRING_NEEDED,
+    HOMESPAN_PAIRED,
     HOMESPAN_READY,
 };
 
@@ -206,6 +207,7 @@ struct Span{
   void setWifiCredentials(const char *ssid, const char *pwd);             // sets WiFi Credentials
 
   void addEventCallback(void (*f)(int e));                                // adds an event callback
+  void fireEventCallback(int e);                                          // fires an event
 };
 
 ///////////////////////////////

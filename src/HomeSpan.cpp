@@ -174,17 +174,11 @@ void Span::poll() {
       } else {
         Serial.print("YOU MAY CONFIGURE BY TYPING 'W <RETURN>'.\n\n");
         statusLED.start(LED_WIFI_NEEDED);
-        
-        if(eventLoopHandle != NULL) {
-          esp_event_post_to(eventLoopHandle, HOMESPAN_EVENT_BASE, HOMESPAN_WIFI_NEEDED, NULL, 0, portMAX_DELAY);
-        }
+        fireEventCallback(HOMESPAN_WIFI_NEEDED);
       }
     } else {
       homeSpan.statusLED.start(LED_WIFI_CONNECTING);
-
-      if(eventLoopHandle != NULL) {
-        esp_event_post_to(eventLoopHandle, HOMESPAN_EVENT_BASE, HOMESPAN_WIFI_CONNECTING, NULL, 0, portMAX_DELAY);
-      }
+      fireEventCallback(HOMESPAN_WIFI_CONNECTING);
     }
           
     controlButton.reset();        
@@ -193,9 +187,7 @@ void Span::poll() {
     Serial.print(" is READY!\n\n");
     isInitialized=true;
 
-    if(eventLoopHandle != NULL) {
-      esp_event_post_to(eventLoopHandle, HOMESPAN_EVENT_BASE, HOMESPAN_READY, NULL, 0, portMAX_DELAY);
-    }
+    fireEventCallback(HOMESPAN_READY);
     
   } // isInitialized
 
@@ -345,17 +337,12 @@ void Span::commandMode(){
 
     case 1:
       Serial.print("*** NO ACTION\n\n");
-      if(strlen(network.wifiData.ssid)==0)
+      if(strlen(network.wifiData.ssid)==0) {
         statusLED.start(LED_WIFI_NEEDED);
-        if(eventLoopHandle != NULL) {
-          esp_event_post_to(eventLoopHandle, HOMESPAN_EVENT_BASE, HOMESPAN_WIFI_NEEDED, NULL, 0, portMAX_DELAY);
-        }
-      else
-      if(!HAPClient::nAdminControllers()) {
+        fireEventCallback(HOMESPAN_WIFI_NEEDED);
+      } else if(!HAPClient::nAdminControllers()) {
         statusLED.start(LED_PAIRING_NEEDED);
-        if(eventLoopHandle != NULL) {
-          esp_event_post_to(eventLoopHandle, HOMESPAN_EVENT_BASE, HOMESPAN_PAIRING_NEEDED, NULL, 0, portMAX_DELAY);
-        }
+        fireEventCallback(HOMESPAN_PAIRING_NEEDED);
       } else {
         statusLED.on();
       }
@@ -395,9 +382,7 @@ void Span::checkConnect(){
     waitTime=60000;
     alarmConnect=0;
     homeSpan.statusLED.start(LED_WIFI_CONNECTING);
-    if(eventLoopHandle != NULL) {
-      esp_event_post_to(eventLoopHandle, HOMESPAN_EVENT_BASE, HOMESPAN_WIFI_CONNECTING, NULL, 0, portMAX_DELAY);
-    }
+    fireEventCallback(HOMESPAN_WIFI_CONNECTING);
   }
 
   if(WiFi.status()!=WL_CONNECTED){
@@ -533,9 +518,7 @@ void Span::checkConnect(){
             type = "filesystem";
           Serial.println("\n*** OTA Starting:" + type);
           homeSpan.statusLED.start(LED_OTA_STARTED);
-          if(homeSpan.eventLoopHandle != NULL) {
-            esp_event_post_to(homeSpan.eventLoopHandle, HOMESPAN_EVENT_BASE, HOMESPAN_OTA_STARTED, NULL, 0, portMAX_DELAY);
-          }
+          homeSpan.fireEventCallback(HOMESPAN_OTA_STARTED);
         })
         .onEnd([]() {
           Serial.println("\n*** OTA Completed.  Rebooting...");
@@ -575,9 +558,7 @@ void Span::checkConnect(){
   if(!HAPClient::nAdminControllers()){
     Serial.print("DEVICE NOT YET PAIRED -- PLEASE PAIR WITH HOMEKIT APP\n\n");
     statusLED.start(LED_PAIRING_NEEDED);
-    if(eventLoopHandle != NULL) {
-      esp_event_post_to(eventLoopHandle, HOMESPAN_EVENT_BASE, HOMESPAN_PAIRING_NEEDED, NULL, 0, portMAX_DELAY);
-    }
+    fireEventCallback(HOMESPAN_PAIRING_NEEDED);
   } else {
     statusLED.on();
   }
@@ -586,9 +567,7 @@ void Span::checkConnect(){
     wifiCallback();
   }
   
-  if(eventLoopHandle != NULL) {
-    esp_event_post_to(eventLoopHandle, HOMESPAN_EVENT_BASE, HOMESPAN_WIFI_CONNECTED, NULL, 0, portMAX_DELAY);
-  }
+  fireEventCallback(HOMESPAN_WIFI_CONNECTED);
   
 } // initWiFi
 
@@ -783,14 +762,10 @@ void Span::processSerialCommand(const char *c){
       
       if(strlen(network.wifiData.ssid)==0) {
         statusLED.start(LED_WIFI_NEEDED);
-        if(eventLoopHandle != NULL) {
-          esp_event_post_to(eventLoopHandle, HOMESPAN_EVENT_BASE, HOMESPAN_WIFI_NEEDED, NULL, 0, portMAX_DELAY);
-        }
+        fireEventCallback(HOMESPAN_WIFI_NEEDED);
       } else {
         statusLED.start(LED_PAIRING_NEEDED);
-        if(eventLoopHandle != NULL) {
-          esp_event_post_to(eventLoopHandle, HOMESPAN_EVENT_BASE, HOMESPAN_PAIRING_NEEDED, NULL, 0, portMAX_DELAY);
-        }
+        fireEventCallback(HOMESPAN_PAIRING_NEEDED);
       }
     }
     break;
@@ -1389,6 +1364,12 @@ void Span::addEventCallback(void (*f)(int e)) {
   esp_event_handler_register_with(eventLoopHandle, HOMESPAN_EVENT_BASE, ESP_EVENT_ANY_ID, eventHandler, this);
 
   eventCallback=f;
+}
+
+void Span::fireEventCallback(int e) {
+  if(eventLoopHandle != NULL) {
+    esp_event_post_to(eventLoopHandle, HOMESPAN_EVENT_BASE, e, NULL, 0, portMAX_DELAY);
+  }
 }
 
 

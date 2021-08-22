@@ -117,9 +117,7 @@ void Network::apConfigure(){
   Serial.print("\n");
 
   homeSpan.statusLED.start(LED_AP_STARTED);
-  if(homeSpan.eventCallback != NULL) {
-    homeSpan.eventCallback(HOMESPAN_AP_STARTED);
-  }
+  homeSpan.fireEventCallback(HOMESPAN_AP_STARTED);
 
   Serial.print("\nScanning for Networks...\n\n");
   
@@ -277,9 +275,7 @@ void Network::processRequest(char *body, char *formData){
     getFormValue(formData,"pwd",wifiData.pwd,MAX_PWD);
     
     homeSpan.statusLED.start(LED_WIFI_CONNECTING);
-    if(homeSpan.eventCallback != NULL) {
-      homeSpan.eventCallback(HOMESPAN_WIFI_CONNECTING);
-    }
+    homeSpan.fireEventCallback(HOMESPAN_WIFI_CONNECTING);
 
     responseBody+="<meta http-equiv = \"refresh\" content = \"" + String(waitTime) + "; url = /wifi-status\" />"
                   "<p>Initiating WiFi connection to:</p><p><b>" + String(wifiData.ssid) + "</p>";
@@ -327,9 +323,8 @@ void Network::processRequest(char *body, char *formData){
     } else {
       
       homeSpan.statusLED.start(LED_AP_CONNECTED);   // slow double-blink
-      if(homeSpan.eventCallback != NULL) {
-        homeSpan.eventCallback(HOMESPAN_AP_CONNECTED);
-      }
+      homeSpan.fireEventCallback(HOMESPAN_AP_CONNECTED);
+
       
       responseBody+="<p>SUCCESS! Connected to:</p><p><b>" + String(wifiData.ssid) + "</b></p>";
       responseBody+="<p>You may enter new 8-digit Setup Code below, or leave blank to retain existing code.</p>";
@@ -350,9 +345,7 @@ void Network::processRequest(char *body, char *formData){
     LOG1("In Landing Page...\n");
 
     homeSpan.statusLED.start(LED_AP_CONNECTED);
-    if(homeSpan.eventCallback != NULL) {
-      homeSpan.eventCallback(HOMESPAN_AP_CONNECTED);
-    }
+    homeSpan.fireEventCallback(HOMESPAN_AP_CONNECTED);
     waitTime=2;
 
     responseBody+="<p>Welcome to HomeSpan! This page allows you to configure the above HomeSpan device to connect to your WiFi network.</p>"
