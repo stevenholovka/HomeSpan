@@ -33,6 +33,7 @@
 
 #include <Arduino.h>
 #include <unordered_map>
+#include <vector>
 #include <nvs.h>
 
 #include "Settings.h"
@@ -69,6 +70,13 @@ enum {
     HOMESPAN_PAIRING_NEEDED,
     HOMESPAN_PAIRED,
     HOMESPAN_READY,
+    HOMESPAN_ALERT,
+    HOMESPAN_ENTER_CMD_MODE,
+    HOMESPAN_CMD_SELECT_NONE,
+    HOMESPAN_CMD_SELECT_RESTART,
+    HOMESPAN_CMD_SELECT_AP_START,
+    HOMESPAN_CMD_SELECT_UNPAIR,
+    HOMESPAN_CMD_SELECT_WIFI_DELETE,
 };
 
 
