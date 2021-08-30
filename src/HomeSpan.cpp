@@ -306,7 +306,8 @@ void Span::commandMode(){
   int mode=1;
   boolean done=false;
   statusLED.start(500,0.3,mode,1000);
-  fireEventCallback(HOMESPAN_CMD_SELECT_NONE);
+  fireEventCallback(HOMESPAN_ENTER_CMD_MODE);
+  fireEventCallback(HOMESPAN_CMD_SELECT_NONE);  
 
   unsigned long alarmTime=millis()+comModeLife;
 
@@ -370,6 +371,7 @@ void Span::commandMode(){
   } // switch
   
   Serial.print("*** EXITING COMMAND MODE ***\n\n");
+  fireEventCallback(HOMESPAN_EXIT_CMD_MODE);
 }
 
 //////////////////////////////////////
